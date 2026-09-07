@@ -19,6 +19,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
+# 主键类型：PostgreSQL 用 BIGINT；SQLite（测试库）降级为 INTEGER 以支持自增
+BIGINT_PK = BigInteger().with_variant(Integer, "sqlite")
+
 
 class RequestLog(Base):
     __tablename__ = "request_logs"
@@ -28,7 +31,9 @@ class RequestLog(Base):
         Index("ix_request_logs_task_type", "task_type"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        BIGINT_PK, primary_key=True, autoincrement=True
+    )
     user_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )

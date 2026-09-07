@@ -57,7 +57,7 @@ services:
     image: nginx:1.27-alpine
     container_name: ai-api-nginx
     ports:
-      - "80:80"
+      - "8080:80"
       # 生产启用 HTTPS 时挂载证书并开放 443，见 nginx/nginx.conf 注释
       # - "443:443"
     volumes:
@@ -72,6 +72,8 @@ services:
   prometheus:
     image: prom/prometheus:v2.55.1
     container_name: ai-api-prometheus
+    ports:
+      - "19090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - promdata:/prometheus
@@ -83,6 +85,8 @@ services:
   grafana:
     image: grafana/grafana:11.3.0
     container_name: ai-api-grafana
+    ports:
+      - "13000:3000"
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}

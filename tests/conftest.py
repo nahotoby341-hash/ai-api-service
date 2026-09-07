@@ -46,9 +46,11 @@ async def client(db_session, monkeypatch):
     app.dependency_overrides[get_session] = override_get_session
 
     # 1. mock Redis 限流：直接返回额度，不真正连 Redis
+    async def fake_check_rate_limit(user_id: int) -> dict:
+        return {"min": 5, "day": 100}
+
     monkeypatch.setattr(
-        "app.api.routes.ai.check_rate_limit",
-        lambda user_id: {"min": 5, "day": 100},
+        "app.api.routes.ai.check_rate_limit", fake_check_rate_limit
     )
 
     # 2. mock 大模型调用：固定假结果

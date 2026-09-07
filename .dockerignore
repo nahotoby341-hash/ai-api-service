@@ -1,0 +1,21 @@
+# 密钥与环境（绝不进镜像）
+.env
+.env.*
+
+# 本地开发目录
+.venv
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# 版本控制与文档（运行镜像不需要）
+.git
+.gitignore
+docs/
+
+# 测试文件（运行镜像不需要，测试在本地/CI 跑）
+tests/
+pytest.ini
+
+# 日志
+*.log

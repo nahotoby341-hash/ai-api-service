@@ -495,9 +495,9 @@ LLM_MODEL=deepseek-chat          # 模型名
 | app | 本地构建 | 仅内网 8000 | FastAPI 应用（gunicorn+uvicorn workers） |
 | db | postgres:16-alpine | 仅内网 5432 | PostgreSQL，数据卷持久化 |
 | redis | redis:7-alpine | 仅内网 6379 | 限流计数 |
-| nginx | nginx:alpine | **80/443（唯一对外入口）** | 反向代理 + TLS + 静态页 |
-| prometheus | prom/prometheus | 仅内网 9090 | 指标采集 |
-| grafana | grafana/grafana | 仅内网 3000 | 监控面板 |
+| nginx | nginx:alpine | **8080（唯一对外入口，生产换 80/443）** | 反向代理 + TLS + 静态页 |
+| prometheus | prom/prometheus | 19090（本地映射 9090） | 指标采集 |
+| grafana | grafana/grafana | 13000（本地映射 3000） | 监控面板 |
 
 > 安全设计：**只有 Nginx 暴露到公网**，其余服务都在 docker 内部网络，外部无法直连数据库和 Redis。
 
@@ -539,33 +539,36 @@ docker compose up --build
 
 | 地址 | 内容 |
 |---|---|
-| http://localhost | 在线体验测试页 |
-| http://localhost/docs | Swagger 接口文档（可在线调试） |
-| http://localhost:3000 | Grafana（admin/admin） |
-| http://localhost:9090 | Prometheus |
+| http://localhost:8080 | 在线体验测试页 |
+| http://localhost:8080/docs | Swagger 接口文档（可在线调试） |
+| http://localhost:13000 | Grafana（admin/admin123） |
+| http://localhost:19090 | Prometheus |
+
+> 端口说明：本机 80/3000/9090 可能被系统服务（如 WSL2 里的 nginx）占用，
+> 因此本地映射使用 8080/13000/19090；生产部署换回标准端口即可。
 
 ### 第三步：手动体验完整流程（纯命令行，理解原理）
 
 ```bash
 # 1. 注册
-curl -X POST http://localhost/api/v1/auth/register \
+curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"demo@example.com","password":"Abc123456"}'
 
 # 2. 登录，拿到令牌
-curl -X POST http://localhost/api/v1/auth/login \
+curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"demo@example.com","password":"Abc123456"}'
 # 响应里复制 access_token
 
 # 3. 调用翻译
-curl -X POST http://localhost/api/v1/ai/translate \
+curl -X POST http://localhost:8080/api/v1/ai/translate \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <你的access_token>" \
   -d '{"text":"Hello world","target_lang":"zh"}'
 
 # 4. 查看历史
-curl "http://localhost/api/v1/history?page=1&page_size=10" \
+curl "http://localhost:8080/api/v1/history?page=1&page_size=10" \
   -H "Authorization: Bearer <你的access_token>"
 ```
 

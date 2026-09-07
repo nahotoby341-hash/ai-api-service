@@ -17,9 +17,10 @@ docker compose up --build
 
 | 地址 | 说明 |
 |---|---|
-| http://localhost | 在线体验测试页 |
-| http://localhost/docs | Swagger 接口文档 |
-| http://localhost:3000 | Grafana（admin / admin123） |
+| http://localhost:8080 | 在线体验测试页 |
+| http://localhost:8080/docs | Swagger 接口文档 |
+| http://localhost:13000 | Grafana（admin / admin123） |
+| http://localhost:19090 | Prometheus |
 
 ## 本地开发（不依赖 Docker）
 

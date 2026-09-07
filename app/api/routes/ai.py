@@ -12,6 +12,7 @@ from app.db.session import get_session
 from app.models.user import User
 from app.schemas.ai import (
     AIResultResponse,
+    LLMUsage,
     SummarizeRequest,
     TranslateRequest,
 )
@@ -82,7 +83,11 @@ async def _run_ai_task(
             result=result.content,
             provider=result.provider,
             model=result.model,
-            usage=result,  # LLMResult 字段名与 LLMUsage 一致
+            usage=LLMUsage(
+                prompt_tokens=result.prompt_tokens,
+                completion_tokens=result.completion_tokens,
+                total_tokens=result.total_tokens,
+            ),
         )
     )
 
