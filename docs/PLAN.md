@@ -616,7 +616,7 @@ docker compose exec app pytest -v
 
 | 阶段 | 内容 | 交付物 | 验收标准 | 预计工期（全职） |
 |---|---|---|---|---|
-| **P0 框架搭建**（当前） | 目录结构、配置管理、日志、异常处理、Docker 基础 | 可启动的空服务 + 本文档 | `docker compose up` 能起、/healthz 返回 ok | ~0.5 天 ✅ 已完成 |
+| **P0 框架搭建** | 目录结构、配置管理、日志、异常处理、Docker 基础 | 可启动的服务 + 计划文档 | `docker compose up` 能起、/healthz 返回 ok | ✅ 已完成并验收 |
 | **P1 数据层** | SQLAlchemy 模型 + Alembic 迁移 | users/request_logs 表 | 迁移可执行、可回滚 | 0.5~1 天 |
 | **P2 认证** | 注册/登录/刷新 + JWT + 密码哈希 | auth 路由 + 测试 | curl 全流程通过，test_auth 全绿 | 1~1.5 天 |
 | **P3 AI 能力** | LLM 多 provider 服务 + 摘要/翻译路由 | ai 路由 + 测试 | 真实调用任一兼容 API 成功；mock 测试全绿 | 1~2 天（主要耗时在真实 API 调试） |
@@ -639,7 +639,9 @@ docker compose exec app pytest -v
 - **服务器部署（P7）**：仅部署到云服务器跑起来约 1 天；若用自有域名 + HTTPS 证书，国内服务器**备案流程需 1~3 周**（外部流程，不由代码进度决定）。
 - **学习成本**：若边学边做（第一次接触 FastAPI / JWT / Docker），建议每阶段工期 ×1.5~2。
 
-> 当前状态：P0 完成框架骨架 + 计划文档；P1~P7 按里程碑推进，每完成一个里程碑建议提交一次 git。
+> 当前状态：**P0 已完成并通过验收**（2026-09-07：docker compose 全套启动、/healthz 与 /docs 可用、
+> users/request_logs 表迁移成功、注册接口真实写入 PostgreSQL、20 个测试全绿、git 已提交）；
+> P1 数据层表结构已就绪，P2~P7 按里程碑推进，每完成一个里程碑建议提交一次 git。
 
 ---
 
