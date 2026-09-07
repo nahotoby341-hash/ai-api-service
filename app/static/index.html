@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 能力体验台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f4f6f9; color: #1a1b1c; min-height: 100vh; padding: 24px 16px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: #6b7280; font-size: 13px; margin-bottom: 24px; }
+  .card {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 15px; margin-bottom: 14px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  label { font-size: 13px; color: #4b5563; }
+  input, select, textarea {
+    border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 12px;
+    font-size: 14px; font-family: inherit; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid #9bbbf4; border-color: transparent; }
+  textarea { min-height: 100px; resize: vertical; }
+  button {
+    background: #4a7de0; color: #fff; border: none; border-radius: 8px;
+    padding: 10px 18px; font-size: 14px; cursor: pointer;
+  }
+  button:hover { background: #3b67c0; }
+  button:disabled { background: #b3c4e8; cursor: not-allowed; }
+  .btn-ghost { background: #fff; color: #4a7de0; border: 1px solid #4a7de0; }
+  .btn-ghost:hover { background: #f0f5ff; }
+  .status { font-size: 12px; margin-top: 8px; }
+  .ok { color: #16a34a; } .err { color: #dc2626; }
+  .result-box {
+    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+    padding: 12px; font-size: 14px; margin-top: 12px; white-space: pre-wrap;
+    word-break: break-word; min-height: 40px; display: none;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #f0f0f0; }
+  th { color: #6b7280; font-weight: 500; }
+  .token { display: none; }
+  .hidden { display: none; }
+  .rate-info { font-size: 12px; color: #6b7280; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🤖 AI 能力体验台</h1>
+  <p class="sub">FastAPI + JWT + 大模型摘要/翻译 + 历史记录 + Redis 限流 —— 完整链路演示</p>
+
+  <!-- 认证区 -->
+  <div class="card" id="authCard">
+    <h2 id="authTitle">登录</h2>
+    <div class="row">
+      <input id="email" type="email" placeholder="邮箱" value="demo@example.com" style="flex:1;min-width:200px">
+      <input id="password" type="password" placeholder="密码（≥8位含字母数字）" value="Abc123456" style="flex:1;min-width:200px">
+      <button id="btnLogin" onclick="doLogin()">登录</button>
+      <button class="btn-ghost" onclick="doRegister()">注册</button>
+    </div>
+    <div class="status" id="authStatus"></div>
+  </div>
+
+  <!-- 已登录区 -->
+  <div class="card hidden" id="aiCard">
+    <h2>AI 能力</h2>
+    <div class="row" style="margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:6px">
+        <input type="radio" name="task" value="translate" checked onchange="switchTask()"> 翻译
+      </label>
+      <label style="display:flex;align-items:center;gap:6px">
+        <input type="radio" name="task" value="summarize" onchange="switchTask()"> 摘要
+      </label>
+      <select id="targetLang" style="width:auto">
+        <option value="zh">→ 中文</option>
+        <option value="en">→ 英文</option>
+        <option value="ja">→ 日文</option>
+        <option value="ko">→ 韩文</option>
+      </select>
+      <input id="maxLength" type="number" value="200" min="20" max="2000" placeholder="摘要字数" style="width:auto" class="hidden">
+      <button onclick="doTask()" id="btnTask">翻译</button>
+      <button class="btn-ghost" onclick="logout()">退出登录</button>
+    </div>
+    <textarea id="inputText" placeholder="输入要翻译或摘要的文本……">Hello world, welcome to the AI API service.</textarea>
+    <div class="rate-info" id="rateInfo"></div>
+    <div class="result-box" id="resultBox"></div>
+  </div>
+
+  <!-- 历史区 -->
+  <div class="card hidden" id="historyCard">
+    <h2>调用历史</h2>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn-ghost" onclick="loadHistory()">刷新</button>
+      <select id="filterType" onchange="loadHistory()" style="width:auto">
+        <option value="">全部类型</option>
+        <option value="translate">翻译</option>
+        <option value="summarize">摘要</option>
+      </select>
+    </div>
+    <div id="historyTable"></div>
+  </div>
+</div>
+
+<script>
+const API = "/api/v1";
+let token = null;
+
+function setStatus(el, text, isErr) {
+  const node = document.getElementById(el);
+  node.textContent = text;
+  node.className = "status " + (isErr ? "err" : "ok");
+}
+
+async function apiCall(path, method, body, auth) {
+  const headers = { "Content-Type": "application/json" };
+  if (auth && token) headers["Authorization"] = "Bearer " + token;
+  const resp = await fetch(API + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const data = await resp.json().catch(() => ({ message: "响应解析失败" }));
+  return { resp, data };
+}
+
+async function doRegister() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  setStatus("authStatus", "注册中…");
+  const { resp, data } = await apiCall("/auth/register", "POST", { email, password });
+  if (resp.ok) { setStatus("authStatus", "✅ 注册成功，请登录"); }
+  else { setStatus("authStatus", "❌ " + (data.message || "注册失败"), true); }
+}
+
+async function doLogin() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  setStatus("authStatus", "登录中…");
+  const { resp, data } = await apiCall("/auth/login", "POST", { email, password });
+  if (!resp.ok) { setStatus("authStatus", "❌ " + (data.message || "登录失败"), true); return; }
+  token = data.data.access_token;
+  document.getElementById("authCard").classList.add("hidden");
+  document.getElementById("aiCard").classList.remove("hidden");
+  document.getElementById("historyCard").classList.remove("hidden");
+  setStatus("authStatus", "");
+  loadHistory();
+}
+
+function logout() {
+  token = null;
+  document.getElementById("authCard").classList.remove("hidden");
+  document.getElementById("aiCard").classList.add("hidden");
+  document.getElementById("historyCard").classList.add("hidden");
+}
+
+function switchTask() {
+  const task = document.querySelector('input[name="task"]:checked').value;
+  document.getElementById("targetLang").classList.toggle("hidden", task !== "translate");
+  document.getElementById("maxLength").classList.toggle("hidden", task !== "summarize");
+  document.getElementById("btnTask").textContent = task === "translate" ? "翻译" : "摘要";
+}
+
+async function doTask() {
+  const task = document.querySelector('input[name="task"]:checked').value;
+  const text = document.getElementById("inputText").value.trim();
+  if (!text) { alert("请输入文本"); return; }
+  const box = document.getElementById("resultBox");
+  box.style.display = "block";
+  box.textContent = "调用中，请稍候…";
+  document.getElementById("btnTask").disabled = true;
+
+  const body = task === "translate"
+    ? { text, target_lang: document.getElementById("targetLang").value }
+    : { text, max_length: parseInt(document.getElementById("maxLength").value) || 200 };
+
+  const { resp, data } = await apiCall("/ai/" + task, "POST", body, true);
+  document.getElementById("btnTask").disabled = false;
+
+  // 展示限流剩余额度
+  const rem = resp.headers.get("X-RateLimit-Remaining-Minute");
+  if (rem !== null) document.getElementById("rateInfo").textContent = "本分钟剩余额度：" + rem;
+
+  if (resp.ok) {
+    const d = data.data;
+    box.textContent = "【结果】\n" + d.result + "\n\n[模型] " + d.provider + " / " + d.model +
+      "  [耗时] " + (d.usage && d.usage.total_tokens ? d.usage.total_tokens + " tokens" : "-");
+    loadHistory();
+  } else {
+    box.textContent = "❌ " + (data.message || "调用失败");
+  }
+}
+
+async function loadHistory() {
+  if (!token) return;
+  const type = document.getElementById("filterType").value;
+  const qs = type ? "?task_type=" + type + "&page_size=10" : "?page_size=10";
+  const { resp, data } = await apiCall("/history" + qs, "GET", null, true);
+  if (!resp.ok) return;
+  const d = data.data;
+  if (!d.items.length) { document.getElementById("historyTable").innerHTML = '<p class="sub">暂无记录</p>'; return; }
+  let html = "<table><tr><th>ID</th><th>类型</th><th>输入/输出</th><th>模型</th><th>状态</th><th>耗时ms</th><th>时间</th></tr>";
+  for (const it of d.items) {
+    html += `<tr><td>${it.id}</td><td>${it.task_type}</td><td>${it.input_length}/${it.output_length ?? "-"}</td>` +
+            `<td>${it.provider}</td><td>${it.status}</td><td>${it.latency_ms ?? "-"}</td>` +
+            `<td>${new Date(it.created_at).toLocaleString()}</td></tr>`;
+  }
+  html += "</table><p class='sub'>共 " + d.total + " 条</p>";
+  document.getElementById("historyTable").innerHTML = html;
+}
+</script>
+</body>
+</html>
