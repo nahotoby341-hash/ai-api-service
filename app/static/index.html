@@ -3,210 +3,545 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 能力体验台</title>
+<title>AI API 服务 · 演示控制台</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #4f6ef7; --primary-dark: #3a56d4;
+    --success: #52c41a; --error: #ea6668; --warning: #faad14;
+    --bg: #f5f7fa; --card: #ffffff; --text: #1a1b1c;
+    --text-secondary: #6b7280; --border: #e4e3dd; --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: #f4f6f9; color: #1a1b1c; min-height: 100vh; padding: 24px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh;
   }
-  .wrap { max-width: 860px; margin: 0 auto; }
-  h1 { font-size: 22px; margin-bottom: 4px; }
-  .sub { color: #6b7280; font-size: 13px; margin-bottom: 24px; }
-  .card {
-    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
-    padding: 20px; margin-bottom: 16px;
+  .header {
+    background: linear-gradient(135deg, #4f6ef7 0%, #6b8aff 100%);
+    color: white; padding: 14px 24px; display: flex;
+    justify-content: space-between; align-items: center;
+    box-shadow: 0 2px 8px rgba(79,110,247,0.15);
   }
-  .card h2 { font-size: 15px; margin-bottom: 14px; }
-  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-  label { font-size: 13px; color: #4b5563; }
-  input, select, textarea {
-    border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 12px;
-    font-size: 14px; font-family: inherit; width: 100%;
+  .header h1 { font-size: 17px; font-weight: 600; }
+  .header .user-info { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+  .btn-logout {
+    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+    color: white; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+    font-size: 12px; transition: background 0.2s;
   }
-  input:focus, select:focus, textarea:focus { outline: 2px solid #9bbbf4; border-color: transparent; }
-  textarea { min-height: 100px; resize: vertical; }
-  button {
-    background: #4a7de0; color: #fff; border: none; border-radius: 8px;
-    padding: 10px 18px; font-size: 14px; cursor: pointer;
+  .btn-logout:hover { background: rgba(255,255,255,0.3); }
+  .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+  .auth-wrapper { display: flex; justify-content: center; align-items: center; min-height: calc(100vh - 52px); }
+  .auth-card {
+    background: var(--card); border-radius: var(--radius); padding: 28px;
+    width: 100%; max-width: 380px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);
   }
-  button:hover { background: #3b67c0; }
-  button:disabled { background: #b3c4e8; cursor: not-allowed; }
-  .btn-ghost { background: #fff; color: #4a7de0; border: 1px solid #4a7de0; }
-  .btn-ghost:hover { background: #f0f5ff; }
-  .status { font-size: 12px; margin-top: 8px; }
-  .ok { color: #16a34a; } .err { color: #dc2626; }
+  .auth-card h2 { font-size: 20px; margin-bottom: 6px; text-align: center; }
+  .auth-card .subtitle { color: var(--text-secondary); font-size: 13px; text-align: center; margin-bottom: 20px; }
+  .auth-tabs { display: flex; margin-bottom: 18px; border-bottom: 2px solid var(--border); }
+  .auth-tab {
+    flex: 1; padding: 9px; text-align: center; cursor: pointer; font-size: 14px;
+    color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s;
+  }
+  .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 5px; }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; transition: border-color 0.2s; font-family: inherit;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
+  }
+  .form-group textarea { resize: vertical; min-height: 90px; }
+  .btn-primary {
+    width: 100%; padding: 10px; background: var(--primary); color: white; border: none;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:disabled { background: #a0aec0; cursor: not-allowed; }
+  .btn-secondary {
+    padding: 7px 14px; background: white; color: var(--primary); border: 1px solid var(--primary);
+    border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { background: rgba(79,110,247,0.05); }
+  .alert { padding: 9px 13px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: none; }
+  .alert.show { display: block; }
+  .alert-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .alert-success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+  .alert-info { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+  .main-view { display: none; }
+  .main-view.show { display: block; }
+  .tabs {
+    display: flex; gap: 4px; background: var(--card); padding: 5px; border-radius: var(--radius);
+    margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .tab {
+    flex: 1; padding: 9px; text-align: center; cursor: pointer; font-size: 13px;
+    color: var(--text-secondary); border-radius: 7px; transition: all 0.2s; font-weight: 500;
+  }
+  .tab:hover { background: rgba(79,110,247,0.05); }
+  .tab.active { background: var(--primary); color: white; font-weight: 600; }
+  .panel {
+    background: var(--card); border-radius: var(--radius); padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 16px;
+  }
+  .panel h3 { font-size: 15px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .panel h3 .badge {
+    font-size: 11px; padding: 2px 7px; border-radius: 9px;
+    background: rgba(79,110,247,0.1); color: var(--primary); font-weight: 500;
+  }
   .result-box {
-    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
-    padding: 12px; font-size: 14px; margin-top: 12px; white-space: pre-wrap;
-    word-break: break-word; min-height: 40px; display: none;
+    background: #f8f9fb; border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; margin-top: 14px; min-height: 50px; font-size: 14px;
+    white-space: pre-wrap; word-break: break-word;
   }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #f0f0f0; }
-  th { color: #6b7280; font-weight: 500; }
-  .token { display: none; }
-  .hidden { display: none; }
-  .rate-info { font-size: 12px; color: #6b7280; margin-top: 6px; }
+  .result-box.empty { color: var(--text-secondary); font-style: italic; }
+  .result-meta { display: flex; gap: 14px; margin-top: 9px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
+  .loading { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 5px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .history-list { display: flex; flex-direction: column; gap: 9px; }
+  .history-item { border: 1px solid var(--border); border-radius: 8px; padding: 11px 13px; transition: box-shadow 0.2s; }
+  .history-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .history-item .meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .history-item .type-tag { font-size: 11px; padding: 2px 7px; border-radius: 9px; font-weight: 600; }
+  .type-summarize { background: rgba(82,196,26,0.1); color: #52c41a; }
+  .type-translate { background: rgba(79,110,247,0.1); color: var(--primary); }
+  .history-item .time { font-size: 12px; color: var(--text-secondary); }
+  .history-item .detail { font-size: 12px; color: var(--text-secondary); display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 14px; align-items: center; }
+  .pagination button { padding: 5px 11px; border: 1px solid var(--border); background: white; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .pagination .page-info { font-size: 12px; color: var(--text-secondary); }
+  .rate-bar { font-size: 12px; color: var(--text-secondary); margin-top: 8px; display: flex; gap: 14px; }
+  @media (max-width: 640px) {
+    .container { padding: 10px; }
+    .panel { padding: 14px; }
+    .header { padding: 10px 14px; }
+    .tabs { flex-wrap: wrap; }
+    .tab { font-size: 12px; padding: 7px 5px; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>🤖 AI 能力体验台</h1>
-  <p class="sub">FastAPI + JWT + 大模型摘要/翻译 + 历史记录 + Redis 限流 —— 完整链路演示</p>
-
-  <!-- 认证区 -->
-  <div class="card" id="authCard">
-    <h2 id="authTitle">登录</h2>
-    <div class="row">
-      <input id="email" type="email" placeholder="邮箱" value="demo@example.com" style="flex:1;min-width:200px">
-      <input id="password" type="password" placeholder="密码（≥8位含字母数字）" value="Abc123456" style="flex:1;min-width:200px">
-      <button id="btnLogin" onclick="doLogin()">登录</button>
-      <button class="btn-ghost" onclick="doRegister()">注册</button>
-    </div>
-    <div class="status" id="authStatus"></div>
-  </div>
-
-  <!-- 已登录区 -->
-  <div class="card hidden" id="aiCard">
-    <h2>AI 能力</h2>
-    <div class="row" style="margin-bottom:12px">
-      <label style="display:flex;align-items:center;gap:6px">
-        <input type="radio" name="task" value="translate" checked onchange="switchTask()"> 翻译
-      </label>
-      <label style="display:flex;align-items:center;gap:6px">
-        <input type="radio" name="task" value="summarize" onchange="switchTask()"> 摘要
-      </label>
-      <select id="targetLang" style="width:auto">
-        <option value="zh">→ 中文</option>
-        <option value="en">→ 英文</option>
-        <option value="ja">→ 日文</option>
-        <option value="ko">→ 韩文</option>
-      </select>
-      <input id="maxLength" type="number" value="200" min="20" max="2000" placeholder="摘要字数" style="width:auto" class="hidden">
-      <button onclick="doTask()" id="btnTask">翻译</button>
-      <button class="btn-ghost" onclick="logout()">退出登录</button>
-    </div>
-    <textarea id="inputText" placeholder="输入要翻译或摘要的文本……">Hello world, welcome to the AI API service.</textarea>
-    <div class="rate-info" id="rateInfo"></div>
-    <div class="result-box" id="resultBox"></div>
-  </div>
-
-  <!-- 历史区 -->
-  <div class="card hidden" id="historyCard">
-    <h2>调用历史</h2>
-    <div class="row" style="margin-bottom:10px">
-      <button class="btn-ghost" onclick="loadHistory()">刷新</button>
-      <select id="filterType" onchange="loadHistory()" style="width:auto">
-        <option value="">全部类型</option>
-        <option value="translate">翻译</option>
-        <option value="summarize">摘要</option>
-      </select>
-    </div>
-    <div id="historyTable"></div>
+<div class="header">
+  <h1>🤖 AI API 服务 · 演示控制台</h1>
+  <div class="user-info" id="userInfo" style="display:none;">
+    <span id="userEmail" style="opacity:0.9;"></span>
+    <button class="btn-logout" onclick="logout()">退出</button>
   </div>
 </div>
-
+<div class="container">
+  <!-- 登录/注册 -->
+  <div class="auth-wrapper" id="authView">
+    <div class="auth-card">
+      <h2>欢迎使用</h2>
+      <p class="subtitle">AI 赋能的文本摘要与翻译服务</p>
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">登录</div>
+        <div class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">注册</div>
+      </div>
+      <div class="alert alert-error" id="authAlert"></div>
+      <form id="authForm" onsubmit="return handleAuth(event)">
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" id="authEmail" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="authPassword" placeholder="至少 8 位，含字母和数字" required minlength="8">
+        </div>
+        <button type="submit" class="btn-primary" id="authSubmitBtn">登录</button>
+      </form>
+    </div>
+  </div>
+  <!-- 主功能 -->
+  <div class="main-view" id="mainView">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('summarize')">📝 文本摘要</div>
+      <div class="tab" onclick="switchTab('translate')">🌐 文本翻译</div>
+      <div class="tab" onclick="switchTab('history')">📋 请求历史</div>
+    </div>
+    <!-- 摘要 -->
+    <div class="panel" id="panelSummarize">
+      <h3>文本摘要 <span class="badge">DeepSeek</span></h3>
+      <div class="alert alert-error" id="sumAlert"></div>
+      <div class="form-group">
+        <label>输入文本（最多 20000 字符）</label>
+        <textarea id="sumInput" placeholder="粘贴需要摘要的长文本..." rows="5"></textarea>
+      </div>
+      <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
+        <div style="flex:1;">
+          <label>摘要最大字数</label>
+          <input type="number" id="sumMaxLen" value="200" min="20" max="2000">
+        </div>
+        <button class="btn-secondary" onclick="clearSum()" style="width:auto; height:38px;">清空</button>
+        <button class="btn-primary" id="sumBtn" onclick="doSummarize()" style="flex:1; height:38px;">生成摘要</button>
+      </div>
+      <div class="rate-bar" id="sumRate" style="display:none;"></div>
+      <div class="result-box empty" id="sumResult">摘要结果将显示在这里...</div>
+      <div class="result-meta" id="sumMeta" style="display:none;"></div>
+    </div>
+    <!-- 翻译 -->
+    <div class="panel" id="panelTranslate" style="display:none;">
+      <h3>文本翻译 <span class="badge">DeepSeek</span></h3>
+      <div class="alert alert-error" id="transAlert"></div>
+      <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
+        <div style="flex:1;">
+          <label>目标语言</label>
+          <select id="transLang">
+            <option value="en">英文</option>
+            <option value="zh">中文</option>
+            <option value="ja">日文</option>
+            <option value="ko">韩文</option>
+            <option value="fr">法文</option>
+            <option value="de">德文</option>
+            <option value="es">西班牙文</option>
+            <option value="ru">俄文</option>
+          </select>
+        </div>
+        <button class="btn-secondary" onclick="clearTrans()" style="width:auto; height:38px;">清空</button>
+        <button class="btn-primary" id="transBtn" onclick="doTranslate()" style="flex:1; height:38px;">开始翻译</button>
+      </div>
+      <div class="form-group">
+        <label>输入文本</label>
+        <textarea id="transInput" placeholder="输入需要翻译的文本..." rows="5"></textarea>
+      </div>
+      <div class="rate-bar" id="transRate" style="display:none;"></div>
+      <div class="result-box empty" id="transResult">翻译结果将显示在这里...</div>
+      <div class="result-meta" id="transMeta" style="display:none;"></div>
+    </div>
+    <!-- 历史 -->
+    <div class="panel" id="panelHistory" style="display:none;">
+      <h3>请求历史 <span class="badge" id="historyCount">0 条</span></h3>
+      <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
+        <div style="flex:1;">
+          <label>类型筛选</label>
+          <select id="histFilter" onchange="currentPage=1;loadHistory()">
+            <option value="">全部</option>
+            <option value="summarize">摘要</option>
+            <option value="translate">翻译</option>
+          </select>
+        </div>
+        <button class="btn-secondary" onclick="loadHistory()" style="width:auto; height:38px;">刷新</button>
+      </div>
+      <div class="history-list" id="historyList">
+        <div style="text-align:center; color:var(--text-secondary); padding:24px;">加载中...</div>
+      </div>
+      <div class="pagination" id="historyPagination" style="display:none;">
+        <button onclick="changePage(-1)" id="prevBtn">上一页</button>
+        <span class="page-info" id="pageInfo">第 1 页</span>
+        <button onclick="changePage(1)" id="nextBtn">下一页</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
-const API = "/api/v1";
-let token = null;
+const API = '/api/v1';
+let accessToken = localStorage.getItem('access_token') || '';
+let refreshToken = localStorage.getItem('refresh_token') || '';
+let userEmail = localStorage.getItem('user_email') || '';
+let currentPage = 1;
+const pageSize = 10;
 
-function setStatus(el, text, isErr) {
-  const node = document.getElementById(el);
-  node.textContent = text;
-  node.className = "status " + (isErr ? "err" : "ok");
+window.onload = function() {
+  if (accessToken) showMainView();
+  else showAuthView();
+};
+
+// ===== 认证 =====
+function switchAuthTab(type) {
+  document.getElementById('tabLogin').classList.toggle('active', type === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', type === 'register');
+  document.getElementById('authSubmitBtn').textContent = type === 'login' ? '登录' : '注册';
+  hideAlert('authAlert');
 }
 
-async function apiCall(path, method, body, auth) {
-  const headers = { "Content-Type": "application/json" };
-  if (auth && token) headers["Authorization"] = "Bearer " + token;
-  const resp = await fetch(API + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
-  const data = await resp.json().catch(() => ({ message: "响应解析失败" }));
-  return { resp, data };
+async function handleAuth(e) {
+  e.preventDefault();
+  const isLogin = document.getElementById('tabLogin').classList.contains('active');
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const btn = document.getElementById('authSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>处理中...';
+  hideAlert('authAlert');
+  try {
+    const url = isLogin ? API + '/auth/login' : API + '/auth/register';
+    const res = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || (isLogin ? '登录失败' : '注册失败'));
+    if (isLogin) {
+      saveAuth(data.data, email);
+      showMainView();
+    } else {
+      // 注册成功后自动登录
+      const loginRes = await fetch(API + '/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const loginData = await loginRes.json();
+      if (!loginRes.ok) throw new Error('注册成功，但自动登录失败，请手动登录');
+      saveAuth(loginData.data, email);
+      showAlert('authAlert', '注册成功，已自动登录！', 'success');
+      setTimeout(() => showMainView(), 600);
+    }
+  } catch (err) {
+    showAlert('authAlert', err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = isLogin ? '登录' : '注册';
+  }
+  return false;
 }
 
-async function doRegister() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  setStatus("authStatus", "注册中…");
-  const { resp, data } = await apiCall("/auth/register", "POST", { email, password });
-  if (resp.ok) { setStatus("authStatus", "✅ 注册成功，请登录"); }
-  else { setStatus("authStatus", "❌ " + (data.message || "注册失败"), true); }
-}
-
-async function doLogin() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  setStatus("authStatus", "登录中…");
-  const { resp, data } = await apiCall("/auth/login", "POST", { email, password });
-  if (!resp.ok) { setStatus("authStatus", "❌ " + (data.message || "登录失败"), true); return; }
-  token = data.data.access_token;
-  document.getElementById("authCard").classList.add("hidden");
-  document.getElementById("aiCard").classList.remove("hidden");
-  document.getElementById("historyCard").classList.remove("hidden");
-  setStatus("authStatus", "");
-  loadHistory();
+function saveAuth(data, email) {
+  accessToken = data.access_token || '';
+  refreshToken = data.refresh_token || '';
+  userEmail = email;
+  localStorage.setItem('access_token', accessToken);
+  localStorage.setItem('refresh_token', refreshToken);
+  localStorage.setItem('user_email', email);
 }
 
 function logout() {
-  token = null;
-  document.getElementById("authCard").classList.remove("hidden");
-  document.getElementById("aiCard").classList.add("hidden");
-  document.getElementById("historyCard").classList.add("hidden");
+  accessToken = ''; refreshToken = ''; userEmail = '';
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user_email');
+  showAuthView();
 }
 
-function switchTask() {
-  const task = document.querySelector('input[name="task"]:checked').value;
-  document.getElementById("targetLang").classList.toggle("hidden", task !== "translate");
-  document.getElementById("maxLength").classList.toggle("hidden", task !== "summarize");
-  document.getElementById("btnTask").textContent = task === "translate" ? "翻译" : "摘要";
+function showAuthView() {
+  document.getElementById('authView').style.display = 'flex';
+  document.getElementById('mainView').classList.remove('show');
+  document.getElementById('userInfo').style.display = 'none';
 }
 
-async function doTask() {
-  const task = document.querySelector('input[name="task"]:checked').value;
-  const text = document.getElementById("inputText").value.trim();
-  if (!text) { alert("请输入文本"); return; }
-  const box = document.getElementById("resultBox");
-  box.style.display = "block";
-  box.textContent = "调用中，请稍候…";
-  document.getElementById("btnTask").disabled = true;
+function showMainView() {
+  document.getElementById('authView').style.display = 'none';
+  document.getElementById('mainView').classList.add('show');
+  document.getElementById('userInfo').style.display = 'flex';
+  document.getElementById('userEmail').textContent = userEmail;
+  loadHistory();
+}
 
-  const body = task === "translate"
-    ? { text, target_lang: document.getElementById("targetLang").value }
-    : { text, max_length: parseInt(document.getElementById("maxLength").value) || 200 };
+// ===== Token 自动刷新 =====
+async function refreshAccessToken() {
+  if (!refreshToken) return false;
+  try {
+    const res = await fetch(API + '/auth/refresh', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      accessToken = data.data.access_token || accessToken;
+      refreshToken = data.data.refresh_token || refreshToken;
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      return true;
+    }
+  } catch (e) { console.warn('刷新 token 失败', e); }
+  return false;
+}
 
-  const { resp, data } = await apiCall("/ai/" + task, "POST", body, true);
-  document.getElementById("btnTask").disabled = false;
+async function authFetch(url, options = {}) {
+  options.headers = options.headers || {};
+  options.headers['Authorization'] = 'Bearer ' + accessToken;
+  let res = await fetch(url, options);
+  if (res.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      options.headers['Authorization'] = 'Bearer ' + accessToken;
+      res = await fetch(url, options);
+    } else {
+      logout();
+      throw new Error('登录已过期，请重新登录');
+    }
+  }
+  return res;
+}
 
-  // 展示限流剩余额度
-  const rem = resp.headers.get("X-RateLimit-Remaining-Minute");
-  if (rem !== null) document.getElementById("rateInfo").textContent = "本分钟剩余额度：" + rem;
+// ===== 标签切换 =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['summarize','translate','history'][i] === tab);
+  });
+  document.getElementById('panelSummarize').style.display = tab === 'summarize' ? 'block' : 'none';
+  document.getElementById('panelTranslate').style.display = tab === 'translate' ? 'block' : 'none';
+  document.getElementById('panelHistory').style.display = tab === 'history' ? 'block' : 'none';
+  if (tab === 'history') loadHistory();
+}
 
-  if (resp.ok) {
+// ===== 摘要 =====
+function clearSum() {
+  document.getElementById('sumInput').value = '';
+  document.getElementById('sumResult').textContent = '摘要结果将显示在这里...';
+  document.getElementById('sumResult').classList.add('empty');
+  document.getElementById('sumMeta').style.display = 'none';
+  document.getElementById('sumRate').style.display = 'none';
+  hideAlert('sumAlert');
+}
+
+async function doSummarize() {
+  const text = document.getElementById('sumInput').value.trim();
+  const maxLen = parseInt(document.getElementById('sumMaxLen').value) || 200;
+  if (!text) { showAlert('sumAlert', '请输入需要摘要的文本', 'error'); return; }
+  const btn = document.getElementById('sumBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>生成中...';
+  hideAlert('sumAlert');
+  const startTime = Date.now();
+  try {
+    const res = await authFetch(API + '/ai/summarize', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, max_length: maxLen })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || '摘要生成失败');
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
     const d = data.data;
-    box.textContent = "【结果】\n" + d.result + "\n\n[模型] " + d.provider + " / " + d.model +
-      "  [耗时] " + (d.usage && d.usage.total_tokens ? d.usage.total_tokens + " tokens" : "-");
+    document.getElementById('sumResult').textContent = d.result;
+    document.getElementById('sumResult').classList.remove('empty');
+    const meta = document.getElementById('sumMeta');
+    meta.style.display = 'flex';
+    const u = d.usage || {};
+    meta.innerHTML = `<span>⏱ ${elapsed}s</span><span>🤖 ${d.provider}/${d.model}</span><span>📊 ${u.total_tokens || '-'} tokens</span>`;
+    // 限流信息
+    const remMin = res.headers.get('X-RateLimit-Remaining-Minute');
+    const remDay = res.headers.get('X-RateLimit-Remaining-Day');
+    if (remMin !== null) {
+      const rate = document.getElementById('sumRate');
+      rate.style.display = 'flex';
+      rate.textContent = `本分钟剩余: ${remMin} 次 | 本日剩余: ${remDay || '-'} 次`;
+    }
     loadHistory();
-  } else {
-    box.textContent = "❌ " + (data.message || "调用失败");
+  } catch (err) {
+    showAlert('sumAlert', err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '生成摘要';
   }
 }
 
-async function loadHistory() {
-  if (!token) return;
-  const type = document.getElementById("filterType").value;
-  const qs = type ? "?task_type=" + type + "&page_size=10" : "?page_size=10";
-  const { resp, data } = await apiCall("/history" + qs, "GET", null, true);
-  if (!resp.ok) return;
-  const d = data.data;
-  if (!d.items.length) { document.getElementById("historyTable").innerHTML = '<p class="sub">暂无记录</p>'; return; }
-  let html = "<table><tr><th>ID</th><th>类型</th><th>输入/输出</th><th>模型</th><th>状态</th><th>耗时ms</th><th>时间</th></tr>";
-  for (const it of d.items) {
-    html += `<tr><td>${it.id}</td><td>${it.task_type}</td><td>${it.input_length}/${it.output_length ?? "-"}</td>` +
-            `<td>${it.provider}</td><td>${it.status}</td><td>${it.latency_ms ?? "-"}</td>` +
-            `<td>${new Date(it.created_at).toLocaleString()}</td></tr>`;
+// ===== 翻译 =====
+function clearTrans() {
+  document.getElementById('transInput').value = '';
+  document.getElementById('transResult').textContent = '翻译结果将显示在这里...';
+  document.getElementById('transResult').classList.add('empty');
+  document.getElementById('transMeta').style.display = 'none';
+  document.getElementById('transRate').style.display = 'none';
+  hideAlert('transAlert');
+}
+
+async function doTranslate() {
+  const text = document.getElementById('transInput').value.trim();
+  const targetLang = document.getElementById('transLang').value;
+  if (!text) { showAlert('transAlert', '请输入需要翻译的文本', 'error'); return; }
+  const btn = document.getElementById('transBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>翻译中...';
+  hideAlert('transAlert');
+  const startTime = Date.now();
+  try {
+    const res = await authFetch(API + '/ai/translate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, target_lang: targetLang })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || '翻译失败');
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+    const d = data.data;
+    document.getElementById('transResult').textContent = d.result;
+    document.getElementById('transResult').classList.remove('empty');
+    const meta = document.getElementById('transMeta');
+    meta.style.display = 'flex';
+    const u = d.usage || {};
+    meta.innerHTML = `<span>⏱ ${elapsed}s</span><span>🎯 → ${targetLang}</span><span>🤖 ${d.provider}/${d.model}</span><span>📊 ${u.total_tokens || '-'} tokens</span>`;
+    const remMin = res.headers.get('X-RateLimit-Remaining-Minute');
+    const remDay = res.headers.get('X-RateLimit-Remaining-Day');
+    if (remMin !== null) {
+      const rate = document.getElementById('transRate');
+      rate.style.display = 'flex';
+      rate.textContent = `本分钟剩余: ${remMin} 次 | 本日剩余: ${remDay || '-'} 次`;
+    }
+    loadHistory();
+  } catch (err) {
+    showAlert('transAlert', err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '开始翻译';
   }
-  html += "</table><p class='sub'>共 " + d.total + " 条</p>";
-  document.getElementById("historyTable").innerHTML = html;
+}
+
+// ===== 历史 =====
+async function loadHistory() {
+  if (!accessToken) return;
+  const listEl = document.getElementById('historyList');
+  listEl.innerHTML = '<div style="text-align:center; color:var(--text-secondary); padding:24px;">加载中...</div>';
+  try {
+    const filter = document.getElementById('histFilter').value;
+    const qs = new URLSearchParams({ page: currentPage, page_size: pageSize });
+    if (filter) qs.set('task_type', filter);
+    const res = await authFetch(API + '/history?' + qs.toString());
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || '加载历史失败');
+    const d = data.data;
+    const items = d.items || [];
+    const total = d.total || 0;
+    document.getElementById('historyCount').textContent = total + ' 条';
+    if (items.length === 0) {
+      listEl.innerHTML = '<div style="text-align:center; color:var(--text-secondary); padding:24px;">暂无请求记录，去试试摘要或翻译吧！</div>';
+      document.getElementById('historyPagination').style.display = 'none';
+      return;
+    }
+    listEl.innerHTML = items.map(it => {
+      const typeClass = it.task_type === 'summarize' ? 'type-summarize' : 'type-translate';
+      const typeLabel = it.task_type === 'summarize' ? '摘要' : '翻译';
+      const time = it.created_at ? new Date(it.created_at).toLocaleString('zh-CN') : '';
+      return `<div class="history-item">
+        <div class="meta"><span class="type-tag ${typeClass}">${typeLabel}</span><span class="time">${time}</span></div>
+        <div class="detail">
+          <span>📝 ${it.input_length || 0} → ${it.output_length || 0} 字</span>
+          <span>🤖 ${it.provider || '-'}/${it.model || '-'}</span>
+          <span>📊 ${it.total_tokens || '-'} tokens</span>
+          <span>⏱ ${it.latency_ms || '-'}ms</span>
+          <span>${it.status === 'success' ? '✅' : '❌'} ${it.status}</span>
+        </div>
+      </div>`;
+    }).join('');
+    const totalPages = Math.ceil(total / pageSize);
+    document.getElementById('historyPagination').style.display = totalPages > 1 ? 'flex' : 'none';
+    document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页`;
+    document.getElementById('prevBtn').disabled = currentPage <= 1;
+    document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+  } catch (err) {
+    listEl.innerHTML = `<div style="text-align:center; color:var(--error); padding:24px;">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function changePage(delta) {
+  currentPage += delta;
+  if (currentPage < 1) currentPage = 1;
+  loadHistory();
+}
+
+// ===== 工具 =====
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'alert alert-' + type + ' show';
+  if (type !== 'error') setTimeout(() => el.classList.remove('show'), 4000);
+}
+function hideAlert(id) { document.getElementById(id).classList.remove('show'); }
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
 }
 </script>
 </body>

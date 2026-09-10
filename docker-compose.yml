@@ -45,6 +45,9 @@ services:
     command: >
       sh -c "alembic upgrade head &&
              gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:8000"
+    volumes:
+      # 开发时挂载静态目录，修改页面无需重新构建镜像
+      - ./app/static:/app/app/static:ro
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz"]
       interval: 10s
